@@ -67,7 +67,7 @@ function periodMetrics(rows) {
     revenue: sales + otherIncome, expenses: cogs + operatingExpense + financeCost };
 }
 
-function lineChart(targetId, rows, series) {
+function groupedBarChart(targetId, rows, series) {
   const target = el(targetId);
   if (!rows.length) { target.innerHTML = '<div class="empty-state">داده‌ای برای نمایش وجود ندارد</div>'; return; }
   const byMonth = new Map(rows.map(row => [monthNumber(row), row]));
@@ -91,25 +91,23 @@ function lineChart(targetId, rows, series) {
     return `<line x1="${x0}" x2="${x1}" y1="${cy}" y2="${cy}" class="${Math.abs(value) < step / 100 ? 'chart-zero' : 'chart-grid'}"/><text x="${x0 - 8}" y="${cy + 4}" text-anchor="end" class="chart-axis-y">${fmt(value)}</text>`;
   }).join('');
   const selection = selectedMonth === 'all' ? '' : `<rect x="${x(Number(selectedMonth) - 1) - band / 2 + 2}" y="${yTop}" width="${band - 4}" height="${yBottom - yTop}" fill="#eaf4ff"/>`;
+  const barWidth = Math.min(23, band * .28);
+  const gap = 4;
   const bars = slots.map((slot, index) => {
     if (!slot.row) return '';
-    const value = amount(series[0].value(slot.row));
-    const top = Math.min(y(value), y(0));
-    const height = Math.max(1, Math.abs(y(0) - y(value)));
-    const label = slots.length <= 7 ? `<text x="${x(index)}" y="${Math.max(yTop + 11, top - 7)}" text-anchor="middle" class="chart-bar-label">${fmt(value)}</text>` : '';
-    return `<rect x="${x(index) - 17}" y="${top}" width="34" height="${height}" rx="2" fill="${series[0].color}" opacity="${selectedMonth !== 'all' && Number(selectedMonth) !== slot.month ? .45 : .88}" class="chart-bar"><title>${monthName(slot.row)} · ${series[0].name}: ${fmt(value)} میلیارد تومان</title></rect>${label}`;
-  }).join('');
-  let path = '', previous = false;
-  const points = slots.map((slot, index) => {
-    if (!slot.row) { previous = false; return ''; }
-    const value = amount(series[1].value(slot.row));
-    path += `${previous ? 'L' : 'M'}${x(index).toFixed(1)},${y(value).toFixed(1)} `;
-    previous = true;
-    const chosen = selectedMonth !== 'all' && Number(selectedMonth) === slot.month;
-    return `<circle cx="${x(index)}" cy="${y(value)}" r="${chosen ? 5 : 3.5}" fill="${series[1].color}" class="chart-point"><title>${monthName(slot.row)} · ${series[1].name}: ${fmt(value)} میلیارد تومان</title></circle>`;
+    return series.map((item, seriesIndex) => {
+      const value = amount(item.value(slot.row));
+      const top = Math.min(y(value), y(0));
+      const barHeight = Math.max(1, Math.abs(y(0) - y(value)));
+      const left = x(index) + (seriesIndex === 0 ? -barWidth - gap / 2 : gap / 2);
+      const opacity = selectedMonth !== 'all' && Number(selectedMonth) !== slot.month ? .4 : .9;
+      const labelY = value >= 0 ? Math.max(yTop + 10, top - 7) : Math.min(height - 27, top + barHeight + 13);
+      const label = slots.length <= 7 && Math.abs(value) >= .05 ? `<text x="${left + barWidth / 2}" y="${labelY}" text-anchor="middle" style="fill:${item.color}" class="chart-bar-label">${fmt(value)}</text>` : '';
+      return `<rect x="${left}" y="${top}" width="${barWidth}" height="${barHeight}" rx="2" fill="${item.color}" opacity="${opacity}" class="chart-bar"><title>${monthName(slot.row)} · ${item.name}: ${fmt(value)} میلیارد تومان</title></rect>${label}`;
+    }).join('');
   }).join('');
   const labels = slots.map((slot, index) => `<text x="${x(index)}" y="${height - 13}" text-anchor="middle" class="chart-axis ${Number(selectedMonth) === slot.month ? 'chart-axis-selected' : ''}">${MONTHS[index]}</text>`).join('');
-  target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(series.map(item => item.name).join(' و '))} در سال ${selectedYear}"><text x="${x0}" y="14" class="chart-unit">میلیارد تومان</text>${selection}${grid}${bars}<path d="${path}" stroke="${series[1].color}" class="chart-line"/>${points}${labels}</svg>`;
+  target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="نمودار میله‌ای ${escapeHtml(series.map(item => item.name).join(' و '))} در سال ${selectedYear}"><text x="${x0}" y="14" class="chart-unit">میلیارد تومان</text>${selection}${grid}${bars}${labels}</svg>`;
 }
 
 function renderBalance(metrics) {
@@ -137,17 +135,23 @@ function renderBreakdown(metrics) {
 }
 
 function renderPnlTable(metrics) {
-  const rows = [
-    ['فروش خالص', metrics.sales, 'income'],
-    ['بهای تمام‌شده', -metrics.cogs, 'expense'],
-    ['سود ناخالص', metrics.sales - metrics.cogs, 'subtotal'],
-    ['هزینه‌های عملیاتی', -metrics.operatingExpense, 'expense'],
-    ['سود عملیاتی', metrics.operatingProfit, 'subtotal'],
-    ['سایر درآمدها', metrics.otherIncome, 'income'],
-    ['هزینه مالی', -metrics.financeCost, 'expense'],
-    ['سود پیش از مالیات', metrics.pretaxProfit, 'grand']
+  const months = visibleRows();
+  const monthly = months.map(monthMetrics);
+  const showTotal = selectedMonth === 'all' && months.length > 1;
+  const lines = [
+    ['فروش خالص', item => item.sales, 'income'],
+    ['بهای تمام‌شده', item => -item.cogs, 'expense'],
+    ['سود ناخالص', item => item.sales - item.cogs, 'subtotal'],
+    ['هزینه‌های عملیاتی', item => -item.operatingExpense, 'expense'],
+    ['سود عملیاتی', item => item.operatingProfit, 'subtotal'],
+    ['سایر درآمدها', item => item.otherIncome, 'income'],
+    ['هزینه مالی', item => -item.financeCost, 'expense'],
+    ['سود پیش از مالیات', item => item.pretaxProfit, 'grand']
   ];
-  el('pnl-table').innerHTML = rows.map(([name, value, type]) => `<tr class="statement-${type}"><td>${name}</td><td class="numeric">${fmtMoney(value)}</td><td class="numeric">${fmtPct(value, metrics.sales)}</td></tr>`).join('');
+  const table = el('pnl-table').closest('table');
+  table.style.minWidth = `${210 + months.length * 112 + (showTotal ? 125 : 0)}px`;
+  el('pnl-table-head').innerHTML = `<tr><th scope="col" class="matrix-label">شرح</th>${months.map(row => `<th scope="col" class="numeric ${selectedMonth !== 'all' ? 'matrix-selected' : ''}">${MONTHS[monthNumber(row) - 1]}</th>`).join('')}${showTotal ? '<th scope="col" class="numeric matrix-total-col">جمع دوره</th>' : ''}</tr>`;
+  el('pnl-table').innerHTML = lines.map(([name, getValue, type]) => `<tr class="statement-${type}"><th scope="row" class="matrix-label">${name}</th>${monthly.map(item => `<td class="numeric ${selectedMonth !== 'all' ? 'matrix-selected' : ''}">${fmtMoney(getValue(item))}</td>`).join('')}${showTotal ? `<td class="numeric matrix-total-col">${fmtMoney(getValue(metrics))}</td>` : ''}</tr>`).join('');
 }
 
 function budgetMonthlyRows() {
@@ -156,9 +160,11 @@ function budgetMonthlyRows() {
     const period = String(field(row, 'period', ''));
     const actual = lookup.get(period);
     const monthly = actual ? monthMetrics(actual) : null;
-    const revenueBudget = num(field(row, 'revenue'));
-    const expenseBudget = num(field(row, 'expenses'));
-    return { period, revenueBudget, expenseBudget, profitBudget: revenueBudget - expenseBudget,
+    const revenueValue = field(row, 'revenue', null);
+    const expenseValue = field(row, 'expenses', null);
+    const revenueBudget = revenueValue === null ? null : num(revenueValue);
+    const expenseBudget = expenseValue === null ? null : num(expenseValue);
+    return { period, revenueBudget, expenseBudget, profitBudget: revenueBudget === null || expenseBudget === null ? null : revenueBudget - expenseBudget,
       revenueActual: monthly?.revenue ?? null, expenseActual: monthly?.expenses ?? null, profitActual: monthly?.pretaxProfit ?? null };
   });
 }
@@ -166,7 +172,7 @@ function budgetMonthlyRows() {
 function budgetChart(targetId, rows, budgetKey, actualKey) {
   const target = el(targetId);
   if (!rows.length) { target.innerHTML = '<div class="empty-state">بودجه‌ای برای نمایش وجود ندارد</div>'; return; }
-  const all = rows.flatMap(row => [amount(row[budgetKey]), row[actualKey] === null ? null : amount(row[actualKey])]).filter(value => value !== null);
+  const all = rows.flatMap(row => [row[budgetKey] === null ? null : amount(row[budgetKey]), row[actualKey] === null ? null : amount(row[actualKey])]).filter(value => value !== null);
   let min = Math.min(0, ...all), max = Math.max(0, ...all);
   if (min === max) max = min + 1;
   max += (max - min) * .08;
@@ -179,11 +185,11 @@ function budgetChart(targetId, rows, budgetKey, actualKey) {
   const highlight = selectedMonth === 'all' ? '' : `<rect x="${x0 + groupWidth * (Number(selectedMonth) - 1) + 2}" y="${y0}" width="${groupWidth - 4}" height="${y1 - y0}" fill="#eaf4ff"/>`;
   const bars = rows.map((row, index) => {
     const center = x0 + groupWidth * (index + .5);
-    const budget = amount(row[budgetKey]);
+    const budget = row[budgetKey] === null ? null : amount(row[budgetKey]);
     const actual = row[actualKey] === null ? null : amount(row[actualKey]);
     const opacity = selectedMonth !== 'all' && Number(selectedMonth) !== Number(row.period.slice(5)) ? .35 : 1;
     const rect = (value, x, color, type) => { const top = Math.min(y(0), y(value)); const barHeight = Math.max(1, Math.abs(y(value) - y(0))); return `<rect x="${x}" y="${top}" width="${barWidth}" height="${barHeight}" fill="${color}" opacity="${opacity}" class="chart-bar"><title>${row.period} · ${type}: ${fmt(value)} میلیارد تومان</title></rect>`; };
-    return rect(budget, center - barWidth - 1, COLORS.slate, 'بودجه') + (actual === null ? '' : rect(actual, center + 1, COLORS.blue, 'عملکرد')) + `<text x="${center}" y="${height - 9}" text-anchor="middle" class="chart-axis ${opacity === 1 && selectedMonth !== 'all' ? 'chart-axis-selected' : ''}">${integer.format(Number(row.period.slice(5)))}</text>`;
+    return (budget === null ? '' : rect(budget, center - barWidth - 1, COLORS.slate, 'بودجه')) + (actual === null ? '' : rect(actual, center + 1, COLORS.blue, 'عملکرد')) + `<text x="${center}" y="${height - 9}" text-anchor="middle" class="chart-axis ${opacity === 1 && selectedMonth !== 'all' ? 'chart-axis-selected' : ''}">${integer.format(Number(row.period.slice(5)))}</text>`;
   }).join('');
   target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="مقایسه بودجه و عملکرد ماهانه">${highlight}${grid}<line x1="${x0}" x2="${x1}" y1="${y(0)}" y2="${y(0)}" class="chart-zero"/>${bars}</svg>`;
 }
@@ -202,7 +208,7 @@ function renderBudget() {
   const lastActual = monthly.filter(row => row.revenueActual !== null).at(-1)?.period;
   const chosenPeriod = selectedMonth === 'all' ? lastActual : `${selectedYear}/${String(selectedMonth).padStart(2, '0')}`;
   const upto = validYear && chosenPeriod ? monthly.filter(row => selectedMonth === 'all' ? row.period <= chosenPeriod : row.period === chosenPeriod) : [];
-  const totalBudget = key => upto.reduce((total, row) => total + row[key], 0);
+  const totalBudget = key => upto.reduce((total, row) => total + (row[key] ?? 0), 0);
   const totalActual = key => upto.reduce((total, row) => total + (row[key] ?? 0), 0);
   const metrics = [
     ['درآمد', totalBudget('revenueBudget'), totalActual('revenueActual')],
@@ -210,12 +216,18 @@ function renderBudget() {
     ['سود', totalBudget('profitBudget'), totalActual('profitActual')]
   ];
   setText('budget-period-label', selectedMonth === 'all' ? 'تجمعی تا آخرین ماه دارای عملکرد' : `ماه ${MONTHS[Number(selectedMonth) - 1]}`);
-  setText('budget-table-period', validYear ? (selectedMonth === 'all' ? `تجمعی تا ${monthName(referenceRow())}؛ بودجه و عملکرد هم‌دوره` : `ماه ${monthName(referenceRow())}`) : `بودجه فقط برای سال ${integer.format(Number(budgetYear))} موجود است`);
+  setText('budget-table-period', validYear ? (selectedMonth === 'all' ? `ماه‌های سال ${integer.format(Number(selectedYear))}؛ جمع تا ${monthName(referenceRow())}` : `ماه ${monthName(referenceRow())}`) : `بودجه فقط برای سال ${integer.format(Number(budgetYear))} موجود است`);
   setText('revenue-achievement', validYear ? fmtPct(metrics[0][2], metrics[0][1]) : '—');
   setText('expense-achievement', validYear ? fmtPct(metrics[1][2], metrics[1][1]) : '—');
   setText('profit-achievement', validYear ? fmtPct(metrics[2][2], metrics[2][1]) : '—');
   setText('profit-variance', validYear ? fmtMoney(metrics[2][2] - metrics[2][1]) : '—');
-  el('budget-table').innerHTML = validYear ? metrics.map(([name, budget, actual]) => `<tr><td>${name}</td><td class="numeric">${fmtMoney(budget)}</td><td class="numeric">${fmtMoney(actual)}</td><td class="numeric">${fmtPct(actual, budget)}</td><td class="numeric">${fmtMoney(actual - budget)}</td></tr>`).join('') : '<tr><td colspan="5">برای این سال بودجه‌ای در فایل موجود نیست.</td></tr>';
+  el('budget-table-head').innerHTML = '<tr><th rowspan="2" class="matrix-label">ماه</th><th colspan="3">درآمد</th><th colspan="3">هزینه</th><th colspan="4">سود</th></tr><tr><th class="numeric">بودجه</th><th class="numeric">عملکرد</th><th class="numeric">تحقق</th><th class="numeric">بودجه</th><th class="numeric">عملکرد</th><th class="numeric">تحقق</th><th class="numeric">بودجه</th><th class="numeric">عملکرد</th><th class="numeric">تحقق</th><th class="numeric">انحراف</th></tr>';
+  const cell = value => value === null ? '—' : fmtMoney(value);
+  const rowHtml = (label, revenueBudget, revenueActual, expenseBudget, expenseActual, profitBudget, profitActual, rowClass = '') => `<tr class="${rowClass}"><th scope="row" class="matrix-label">${label}</th><td class="numeric">${cell(revenueBudget)}</td><td class="numeric">${cell(revenueActual)}</td><td class="numeric">${revenueActual === null ? '—' : fmtPct(revenueActual, revenueBudget)}</td><td class="numeric">${cell(expenseBudget)}</td><td class="numeric">${cell(expenseActual)}</td><td class="numeric">${expenseActual === null ? '—' : fmtPct(expenseActual, expenseBudget)}</td><td class="numeric">${cell(profitBudget)}</td><td class="numeric">${cell(profitActual)}</td><td class="numeric">${profitActual === null ? '—' : fmtPct(profitActual, profitBudget)}</td><td class="numeric">${profitActual === null || profitBudget === null ? '—' : fmtMoney(profitActual - profitBudget)}</td></tr>`;
+  const tableRows = validYear ? (selectedMonth === 'all' ? monthly : monthly.filter(row => row.period === chosenPeriod)) : [];
+  const body = tableRows.map(row => rowHtml(MONTHS[Number(row.period.slice(5)) - 1], row.revenueBudget, row.revenueActual, row.expenseBudget, row.expenseActual, row.profitBudget, row.profitActual)).join('');
+  const totalRow = validYear && selectedMonth === 'all' && upto.length ? rowHtml(`جمع تا ${MONTHS[Number(chosenPeriod.slice(5)) - 1]}`, metrics[0][1], metrics[0][2], metrics[1][1], metrics[1][2], metrics[2][1], metrics[2][2], 'budget-total-row') : '';
+  el('budget-table').innerHTML = validYear ? body + totalRow : '<tr><td colspan="11">برای این سال بودجه‌ای در فایل موجود نیست.</td></tr>';
 }
 
 function render() {
@@ -237,7 +249,7 @@ function render() {
   setText('debt-equity-ratio', balance.equity ? fmt(balance.liabilities / balance.equity) : '—');
   setText('voucher-count', integer.format(sum(selectedRows, 'voucherCount')));
   setText('overview-trend-caption', trendCaption);
-  lineChart('trend-chart', yearRows(), [{ name: 'فروش خالص', color: COLORS.blue, value: row => monthMetrics(row).sales }, { name: 'سود عملیاتی', color: COLORS.teal, value: row => monthMetrics(row).operatingProfit }]);
+  groupedBarChart('trend-chart', yearRows(), [{ name: 'فروش خالص', color: COLORS.blue, value: row => monthMetrics(row).sales }, { name: 'سود عملیاتی', color: COLORS.teal, value: row => monthMetrics(row).operatingProfit }]);
   renderBalance(balance);
   setText('pnl-period-label', periodLabel);
   setText('pnl-sales-foot', selectedMonth === 'all' ? 'فروش ماه‌های ثبت‌شدهٔ سال' : 'فروش ماه انتخابی');
@@ -248,7 +260,7 @@ function render() {
   setText('pnl-trend-caption', trendCaption);
   setText('pnl-table-period', periodLabel);
   renderBreakdown(pnl);
-  lineChart('pnl-trend', yearRows(), [{ name: 'فروش خالص', color: COLORS.blue, value: row => monthMetrics(row).sales }, { name: 'سود پیش از مالیات', color: COLORS.teal, value: row => monthMetrics(row).pretaxProfit }]);
+  groupedBarChart('pnl-trend', yearRows(), [{ name: 'فروش خالص', color: COLORS.blue, value: row => monthMetrics(row).sales }, { name: 'سود پیش از مالیات', color: COLORS.teal, value: row => monthMetrics(row).pretaxProfit }]);
   renderPnlTable(pnl);
   renderBudget();
 }
