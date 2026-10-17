@@ -1,14 +1,4 @@
-# Power BI Desktop local recovery and temporary files
-*.tmp
-*.temp
-*.bak
-*.pbix.~*
-*.pbit.~*
-
-# Windows metadata
+.DS_Store
 Thumbs.db
-Desktop.ini
-
-# Editor settings
-.vs/
-.vscode/
+*.tmp
+*.bak

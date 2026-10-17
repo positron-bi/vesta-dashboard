@@ -1,27 +1,22 @@
-# Vesta Power BI Dashboard
+# داشبورد وب مالی وستا
 
-This repository contains the Power BI Desktop report for the Vesta dashboard.
+نسخهٔ استاتیک و قابل‌نمایش در مرورگر از گزارش `vesta.pbix` است. صفحات **نمای کلی**، **سود و زیان** و **بودجه و عملکرد** در آن پیاده‌سازی شده‌اند. صفحه و داده‌های جزئی `Accounting / Live Voucher Detail` عمداً در این نسخه قرار نگرفته‌اند.
 
-## Contents
+## اجرا
 
-- `vesta.pbix` — the Power BI Desktop report file.
+این پوشه را به ریشهٔ ریپوی `positron-bi/vesta-dashboard` منتقل کنید و برای GitHub Pages، مسیر انتشار را روی شاخهٔ `main` و پوشهٔ ریشه تنظیم کنید. پس از انتشار، فایل `index.html` صفحهٔ اصلی خواهد بود.
 
-## Publishing and scheduled refresh
+برای پیش‌نمایش محلی، آن را از طریق یک وب‌سرور باز کنید، نه با دوبارکلیک روی فایل HTML:
 
-Keeping this file in Git does not configure or trigger data refreshes. To enable scheduled refresh after publishing the report:
-
-1. Publish `vesta.pbix` to the intended Power BI workspace.
-2. In Power BI Service, open the semantic model settings.
-3. Configure credentials for every data source.
-4. Install and configure an on-premises data gateway if any source is inside a private network.
-5. Turn on **Scheduled refresh** and set the desired cadence.
-
-## Versioning note
-
-PBIX is a binary file, so Git can store its versions but cannot show useful line-by-line changes. For richer reviews and merges in future, consider saving the report as a Power BI Project (`.pbip`) and committing the project files alongside or instead of the PBIX export.
-
-## Recommended first commit
-
-```text
-Initial Power BI dashboard
+```powershell
+python -m http.server 4173
 ```
+
+سپس `http://127.0.0.1:4173` را باز کنید.
+
+## به‌روزرسانی داده
+
+دادهٔ نمایشی در `data/dashboard-data.json` از مدل بازشدهٔ PBIX استخراج شده است. برای رفرش واقعی باید مسیر استخراج داده را دوباره اجرا و commit کنید؛ GitHub Pages به‌تنهایی به منبع مالی یا Power BI دسترسی ندارد.
+
+
+منطق محاسباتی گزارش از Power BI به پایتون منتقل شده است؛ راهنما و کد آن در پوشهٔ `python/` قرار دارد.

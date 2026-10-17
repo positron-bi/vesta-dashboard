@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="داشبورد مالی وستا — تبدیل‌شده از Power BI" />
+    <title>داشبورد مالی وستا</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">V</span><span>وستا</span></div>
+      <p class="sidebar-label">گزارش‌های مدیریتی</p>
+      <nav aria-label="ناوبری داشبورد">
+        <button class="nav-item active" data-view="overview" data-title="نمای کلی مالی"><span>◈</span>نمای کلی</button>
+        <button class="nav-item" data-view="pnl" data-title="سود و زیان"><span>↗</span>سود و زیان</button>
+        <button class="nav-item" data-view="budget" data-title="بودجه و عملکرد"><span>◫</span>بودجه و عملکرد</button>
+      </nav>
+      <div class="sidebar-foot">داده‌ها از فایل PBIX استخراج شده‌اند<br />جزئیات اسناد حسابداری نمایش داده نمی‌شود.</div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><p class="eyebrow">شرکت <span id="company-name">—</span></p><h1 id="page-title">نمای کلی مالی</h1></div>
+        <div class="header-actions">
+          <label class="period-picker">دوره <select id="period-select" aria-label="انتخاب دوره"></select></label>
+          <span class="freshness" id="freshness">در حال بارگذاری…</span>
+        </div>
+      </header>
+
+      <section id="overview" class="view active">
+        <section class="kpis" aria-label="شاخص‌های کلیدی">
+          <article class="kpi"><p>دارایی کل</p><strong id="asset-total">—</strong><small>میلیارد تومان</small></article>
+          <article class="kpi"><p>بدهی کل</p><strong id="liability-total">—</strong><small>میلیارد تومان</small></article>
+          <article class="kpi"><p>حقوق صاحبان سهام</p><strong id="equity-total">—</strong><small>میلیارد تومان</small></article>
+          <article class="kpi accent"><p>سرمایه در گردش</p><strong id="working-capital">—</strong><small>میلیارد تومان</small></article>
+        </section>
+        <section class="grid two">
+          <article class="card wide"><div class="card-head"><div><p class="card-kicker">روند ماهانه</p><h2>فروش و سود عملیاتی</h2></div><div class="legend"><span class="sales-dot"></span>فروش <span class="profit-dot"></span>سود عملیاتی</div></div><div id="trend-chart" class="chart" aria-label="نمودار روند فروش و سود عملیاتی"></div></article>
+          <article class="card"><div class="card-head"><div><p class="card-kicker">ساختار ترازنامه</p><h2>دارایی، بدهی و حقوق</h2></div></div><div id="balance-chart" class="chart balance-chart"></div><div id="balance-list" class="balance-list"></div></article>
+        </section>
+        <section class="grid three">
+          <article class="card ratio"><p>نسبت جاری</p><strong id="current-ratio">—</strong><small>دارایی جاری ÷ بدهی جاری</small></article>
+          <article class="card ratio"><p>نسبت بدهی به حقوق</p><strong id="debt-equity-ratio">—</strong><small>بدهی کل ÷ حقوق صاحبان سهام</small></article>
+          <article class="card ratio"><p>تعداد اسناد دوره</p><strong id="voucher-count">—</strong><small>بدون نمایش ریز اسناد</small></article>
+        </section>
+      </section>
+
+      <section id="pnl" class="view">
+        <section class="kpis pnl-kpis"><article class="kpi accent"><p>درآمد</p><strong id="pnl-revenue">—</strong><small>میلیارد تومان</small></article><article class="kpi"><p>هزینه‌ها</p><strong id="pnl-expenses">—</strong><small>میلیارد تومان</small></article><article class="kpi"><p>سود خالص</p><strong id="pnl-net">—</strong><small>میلیارد تومان</small></article></section>
+        <article class="card"><div class="card-head"><div><p class="card-kicker">صورت سود و زیان</p><h2>سرفصل‌های تجمیعی</h2></div><span class="muted">ریز سند حسابداری حذف شده است</span></div><div class="table-wrap"><table><thead><tr><th>گروه</th><th>سرفصل</th><th>مبلغ (میلیارد تومان)</th></tr></thead><tbody id="pnl-table"></tbody></table></div></article>
+      </section>
+
+      <section id="budget" class="view">
+        <section class="kpis"><article class="kpi"><p>تحقق درآمد</p><strong id="revenue-achievement">—</strong><small>تا دوره انتخابی</small></article><article class="kpi"><p>تحقق هزینه</p><strong id="expense-achievement">—</strong><small>تا دوره انتخابی</small></article><article class="kpi accent"><p>انحراف سود</p><strong id="profit-variance">—</strong><small>عملکرد در برابر بودجه</small></article><article class="kpi"><p>حاشیه سود</p><strong id="actual-margin">—</strong><small>عملیاتی</small></article></section>
+        <article class="card"><div class="card-head"><div><p class="card-kicker">عملکرد تا دوره انتخابی</p><h2>بودجه در برابر عملکرد واقعی</h2></div><div class="legend"><span class="budget-dot"></span>بودجه <span class="actual-dot"></span>عملکرد</div></div><div id="budget-chart" class="chart tall"></div></article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
