@@ -213,7 +213,7 @@ function renderBudget() {
   const metrics = [
     ['درآمد', totalBudget('revenueBudget'), totalActual('revenueActual')],
     ['هزینه', totalBudget('expenseBudget'), totalActual('expenseActual')],
-    ['سود', totalBudget('profitBudget'), totalActual('profitActual')]
+    ['سود', totalBudget('revenueBudget') - totalBudget('expenseBudget'), totalActual('profitActual')]
   ];
   setText('budget-period-label', selectedMonth === 'all' ? 'تجمعی تا آخرین ماه دارای عملکرد' : `ماه ${MONTHS[Number(selectedMonth) - 1]}`);
   setText('budget-table-period', validYear ? (selectedMonth === 'all' ? `ماه‌های سال ${integer.format(Number(selectedYear))}؛ جمع تا ${monthName(referenceRow())}` : `ماه ${monthName(referenceRow())}`) : `بودجه فقط برای سال ${integer.format(Number(budgetYear))} موجود است`);
