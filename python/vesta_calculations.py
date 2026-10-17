@@ -96,9 +96,14 @@ def profit_and_loss(financial_kpi: Iterable[Mapping[str, Any]], selected_rows: I
 
 
 def budget_vs_actual(financial_kpi: Iterable[Mapping[str, Any]], budget: Iterable[Mapping[str, Any]], period: str) -> dict[str, float | None]:
-    """Converts Revenue/Expenses/Profit Achievement DAX measures to Python."""
-    actual_rows = [row for row in financial_kpi if str(value(row, "month", ""))[:7] <= period]
-    budget_rows = [row for row in budget if str(value(row, "period", "")) <= period]
+    """Compare actuals with budget through a month within the same fiscal year."""
+    year = period[:4]
+    def period_key(row: Mapping[str, Any]) -> str:
+        month_sort = str(value(row, "monthSort", ""))
+        return f"{month_sort[:4]}/{month_sort[4:6]}"
+
+    actual_rows = [row for row in financial_kpi if period_key(row).startswith(year + "/") and period_key(row) <= period]
+    budget_rows = [row for row in budget if str(value(row, "period", "")).startswith(year + "/") and str(value(row, "period", "")) <= period]
     revenue_actual = total(actual_rows, "netSales") + total(actual_rows, "otherIncome")
     expenses_actual = total(actual_rows, "costOfGoodsSold") + total(actual_rows, "operatingExpense") + total(actual_rows, "financeCost")
     revenue_budget = total(budget_rows, "revenue")
