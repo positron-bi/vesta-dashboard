@@ -240,7 +240,8 @@ function render() {
   const trendCaption = selectedMonth === 'all' ? `روند ماه‌های ثبت‌شدهٔ سال ${integer.format(Number(selectedYear))}` : `${MONTHS[Number(selectedMonth) - 1]} در روند سال ${integer.format(Number(selectedYear))} برجسته شده است`;
   setText('company-name', field(anchor, 'company', '—'));
   setText('header-period', periodLabel);
-  setText('freshness', `آخرین تاریخ سند ثبت‌شده: ${field(anchor, 'lastVoucherDate', 'نامشخص')}`);
+  const updated = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Tehran' }).format(new Date(source.extractedAt));
+  setText('freshness', `آخرین به‌روزرسانی داده‌ها: ${updated}`);
   setText('asset-total', fmtMoney(balance.assets));
   setText('liability-total', fmtMoney(balance.liabilities));
   setText('equity-total', fmtMoney(balance.equity));
