@@ -3,6 +3,7 @@ const nf = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
 const smallNf = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 3 });
 const pf = new Intl.NumberFormat('fa-IR', { style: 'percent', maximumFractionDigits: 1 });
 const integer = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 });
+const persianYear = new Intl.NumberFormat('fa-IR', { useGrouping: false, maximumFractionDigits: 0 });
 const COLORS = { blue: '#1776d2', teal: '#0b9b88', slate: '#b7c4d3', indigo: '#5266a8', amber: '#da9638', red: '#d35f63' };
 const MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 let source;
@@ -19,7 +20,7 @@ const fmtPct = (numerator, denominator) => denominator ? pf.format(numerator / d
 const setText = (id, text) => { el(id).textContent = text; };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const monthKey = row => { const key = String(field(row, 'monthSort')); return `${key.slice(0, 4)}/${key.slice(4, 6)}`; };
-const monthName = row => { const key = String(field(row, 'monthSort')); return `${MONTHS[Number(key.slice(4, 6)) - 1] || key.slice(4, 6)} ${integer.format(Number(key.slice(0, 4)))}`; };
+const monthName = row => { const key = String(field(row, 'monthSort')); return `${MONTHS[Number(key.slice(4, 6)) - 1] || key.slice(4, 6)} ${persianYear.format(Number(key.slice(0, 4)))}`; };
 const sum = (rows, key) => rows.reduce((total, row) => total + num(field(row, key)), 0);
 const currentYear = row => String(field(row, 'monthSort')).slice(0, 4);
 const monthNumber = row => Number(String(field(row, 'monthSort')).slice(4, 6));
@@ -216,7 +217,7 @@ function renderBudget() {
     ['سود', totalBudget('revenueBudget') - totalBudget('expenseBudget'), totalActual('profitActual')]
   ];
   setText('budget-period-label', selectedMonth === 'all' ? 'تجمعی تا آخرین ماه دارای عملکرد' : `ماه ${MONTHS[Number(selectedMonth) - 1]}`);
-  setText('budget-table-period', validYear ? (selectedMonth === 'all' ? `ماه‌های سال ${integer.format(Number(selectedYear))}؛ جمع تا ${monthName(referenceRow())}` : `ماه ${monthName(referenceRow())}`) : `بودجه فقط برای سال ${integer.format(Number(budgetYear))} موجود است`);
+  setText('budget-table-period', validYear ? (selectedMonth === 'all' ? `ماه‌های سال ${persianYear.format(Number(selectedYear))}؛ جمع تا ${monthName(referenceRow())}` : `ماه ${monthName(referenceRow())}`) : `بودجه فقط برای سال ${persianYear.format(Number(budgetYear))} موجود است`);
   setText('revenue-achievement', validYear ? fmtPct(metrics[0][2], metrics[0][1]) : '—');
   setText('expense-achievement', validYear ? fmtPct(metrics[1][2], metrics[1][1]) : '—');
   setText('profit-achievement', validYear ? fmtPct(metrics[2][2], metrics[2][1]) : '—');
@@ -236,8 +237,8 @@ function render() {
   const anchor = referenceRow();
   const balance = balanceMetrics(rows);
   const pnl = periodMetrics(selectedRows);
-  const periodLabel = selectedMonth === 'all' ? `سال ${integer.format(Number(selectedYear))}` : `ماه ${monthName(anchor)}`;
-  const trendCaption = selectedMonth === 'all' ? `روند ماه‌های ثبت‌شدهٔ سال ${integer.format(Number(selectedYear))}` : `${MONTHS[Number(selectedMonth) - 1]} در روند سال ${integer.format(Number(selectedYear))} برجسته شده است`;
+  const periodLabel = selectedMonth === 'all' ? `سال ${persianYear.format(Number(selectedYear))}` : `ماه ${monthName(anchor)}`;
+  const trendCaption = selectedMonth === 'all' ? `روند ماه‌های ثبت‌شدهٔ سال ${persianYear.format(Number(selectedYear))}` : `${MONTHS[Number(selectedMonth) - 1]} در روند سال ${persianYear.format(Number(selectedYear))} برجسته شده است`;
   setText('company-name', field(anchor, 'company', '—'));
   setText('header-period', periodLabel);
   const updated = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Tehran' }).format(new Date(source.extractedAt));
@@ -271,7 +272,7 @@ function setup() {
   const yearPicker = el('year-select');
   const monthPicker = el('month-select');
   const years = [...new Set(source.financialKpi.map(currentYear))].sort((a, b) => Number(b) - Number(a));
-  years.forEach(year => yearPicker.add(new Option(integer.format(Number(year)), year)));
+  years.forEach(year => yearPicker.add(new Option(persianYear.format(Number(year)), year)));
   selectedYear = years.includes('1405') ? '1405' : years[0];
   yearPicker.value = selectedYear;
   const updateMonths = () => {
