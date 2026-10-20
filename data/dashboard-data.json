@@ -1,5 +1,5 @@
 {
-  "extractedAt": "2026-10-19T07:42:02.008516+00:00",
+  "extractedAt": "2026-10-20T00:30:24.787641+00:00",
   "source": "Python refresh pipeline",
   "excluded": [
     "Accounting / Live Voucher Detail"
@@ -1121,10 +1121,10 @@
       "[monthSort]": 140507,
       "[lastVoucherDate]": "1405/07/30",
       "[lastSalesInvoiceDate]": "1405/07/22",
-      "[debit]": 8045290747024.0,
-      "[credit]": 8045290747024.0,
-      "[voucherCount]": 123,
-      "[itemCount]": 329,
+      "[debit]": 8046390747024.0,
+      "[credit]": 8046390747024.0,
+      "[voucherCount]": 124,
+      "[itemCount]": 331,
       "[currentAssetsActivity]": 1221636519474.0,
       "[nonCurrentAssetsActivity]": -128417232.0,
       "[currentLiabilitiesActivity]": 1189428110970.0,
